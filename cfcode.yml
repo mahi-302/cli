@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+Metadata:
+  'AWS::CloudFormation::Designer':
+    910d45df-8ab5-461b-a660-83ed087c1bfc:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 330
+        'y': 60
+      z: 1
+      embeds: []
+      dependson:
+        - ef782b97-accf-45b7-a545-fadb845fbdaf
+    ef782b97-accf-45b7-a545-fadb845fbdaf:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 60
+        'y': 90
+      z: 1
+      embeds: []
+Resources:
+  EC2I2GPEM:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-0fb653ca2d3203ac1
+      IamInstanceProfile: role_all
+      InstanceType: t2.micro
+      KeyName: Ec2all
+      SecurityGroupIds:
+        - sg-03723ff32a5606bda
+      SubnetId: subnet-08f3fd927977dc180
+      UserData:
+        'Fn::Base64': !Sub 
+        - |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get upgrade -y
+          sudo wget https://www.apachefriends.org/xampp-files/8.1.2/xampp-linux-x64-8.1.2-0-installer.run
+          sudo chmod 755 xampp-linux-x64-8.1.2-0-installer.run
+          sudo ./xampp-linux-x64-8.1.2-0-installer.run
+          Y
+          Y
+          ENTER
+          Y
+          sudo apt install net-tools
+          sudo /opt/lampp/lampp start
+          sudo rm -rf /opt/lampp/htdocs/*
+          sudo chmod 777 /opt/lampp/htdocs
+          sudo git clone https://github.com/mahi-302/cwms.git
+          sudo cp -r cwms/cwms/* /opt/lampp/htdocs
+          sudo chmod 777 /opt/lampp/htdocs/includes/dbconnection.php
+          sudo sed -i.bak 's/localhost/${endpoint}/g' /opt/lampp/htdocs/includes/dbconnection.php
+          sudo sed -i.bak 's/localhost/${endpoint}/g' /opt/lampp/htdocs/admin/includes/dbconnection.php
+          sudo chmod 777 /opt/lampp/etc/extra/httpd-xampp.conf
+          sudo sed -i.bak 's/local/all granted/g' /opt/lampp/etc/extra/httpd-xampp.conf
+          sudo chmod 755 /opt/lampp/etc/extra/httpd-xampp.conf
+          sudo /opt/lampp/lampp restart
+          sudo chmod 777 /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["verbose"] = "Amazon RDS";' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["host"] = "${endpoint}";' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["user"] = "admin";' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["password"] = "mahesh8842";' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["port"] = "3306";' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["auth_type"] = "config";' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo echo '$cfg["Servers"][$i]["AllowNoPassword"] = true;' >> /opt/lampp/phpmyadmin/config.inc.php
+          sudo chmod 400 /opt/lampp/phpmyadmin/config.inc.php
+          sudo /opt/lampp/lampp restart
+          sudo apt install mysql-client-core-8.0
+          sudo mysql -h ${endpoint} -u admin --password=mahesh8842 cwmsdb < /cwms/SQL\ File/cwmsdb.sql
+        - endpoint: !GetAtt RDSDatabase.Endpoint.Address
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 910d45df-8ab5-461b-a660-83ed087c1bfc
+    DependsOn:
+      - RDSDatabase
+  RDSDatabase:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      AllocatedStorage: 10
+      Engine: MySQL
+      MasterUsername: admin
+      MasterUserPassword: mahesh8842
+      DBInstanceClass: db.t2.micro
+      DBName: cwmsdb
+      DBInstanceIdentifier: MYRDS
+      VPCSecurityGroups:
+        - sg-03723ff32a5606bda
+      EngineVersion: 5.7
+      PubliclyAccessible: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ef782b97-accf-45b7-a545-fadb845fbdaf
