@@ -12,7 +12,7 @@ sudo apt install net-tools
 sudo /opt/lampp/lampp start
 sudo rm -rf /opt/lampp/htdocs/*
 sudo chmod 777 /opt/lampp/htdocs
-sudo git clone https://github.com/mahi-302/cwms.git
+git clone https://github.com/mahi-302/cwms.git
 sudo cp -r cwms/cwms/* /opt/lampp/htdocs
 sudo chmod 777 /opt/lampp/htdocs/includes/dbconnection.php
 sudo -S sed -i.bak 's/localhost/${endpoint}/g' /opt/lampp/htdocs/includes/dbconnection.php
